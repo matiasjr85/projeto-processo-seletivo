@@ -1,10 +1,14 @@
 import express from 'express';
-import router from './Controller/controller.js'; // Certifique-se que o caminho está correto
+import cors from 'cors'; 
+import router from './Controller/controller.js'; 
+import conecxaoDB from './DataBase/dataBaseMoongose.js';
 
 const app = express();
-app.use(express.json()); // Usando express.json() no lugar de bodyParser.json()
+app.use(cors()); 
+app.use(express.json());
+conecxaoDB();
 
-// Define as rotas da API
+
 app.use('/api', router);
 
 const PORT = 3000;

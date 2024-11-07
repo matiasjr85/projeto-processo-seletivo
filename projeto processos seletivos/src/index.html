@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Vagas</title>
+</head>
+<body>
+    <h1>Cadastro de Vagas</h1>
+    <form id="formVaga">
+        <label for="nomeVaga">Nome da Vaga:</label>
+        <input type="text" id="nomeVaga" name="nomeVaga" required><br>
+
+        <label for="modalidade">Modalidade de Trabalho:</label>
+        <input type="text" id="modalidade" name="modalidade" required><br>
+
+        <label for="nomeEmpresa">Nome da Empresa:</label>
+        <input type="text" id="nomeEmpresa" name="nomeEmpresa" required><br>
+
+        <label for="cnpj">CNPJ:</label>
+        <input type="text" id="cnpj" name="cnpj" required><br>
+
+        <label for="cep">CEP:</label>
+        <input type="text" id="cep" name="cep" required><br>
+
+        <button type="submit">Cadastrar Vaga</button>
+    </form>
+
+    <p id="mensagem" style="color: green; display: none;">Vaga cadastrada com sucesso!</p>
+
+    <h2>Lista de Vagas</h2>
+    <div id="listaVagas"></div>
+
+    <script>
+        document.getElementById('formVaga').addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const nomeVaga = document.getElementById('nomeVaga').value;
+            const modalidade = document.getElementById('modalidade').value;
+            const nomeEmpresa = document.getElementById('nomeEmpresa').value;
+            const cnpj = document.getElementById('cnpj').value;
+            const cep = document.getElementById('cep').value;
+
+            try {
+                const response = await fetch('http://localhost:3000/api/vagas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ nomeVaga, modalidade, nomeEmpresa, cnpj, cep })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('mensagem').style.display = 'block';
+                    document.getElementById('mensagem').textContent = 'Vaga cadastrada com sucesso!';
+                    
+                    
+                    document.getElementById('formVaga').reset();
+
+                    
+                    listarVagas();
+                } else {
+                    alert('Erro ao cadastrar vaga: ' + result.mensagem);
+                }
+            } catch (error) {
+                console.error('Erro ao cadastrar vaga:', error);
+                alert('Erro ao cadastrar vaga.');
+            }
+        });
+
+        async function listarVagas() {
+            try {
+                const response = await fetch('http://localhost:3000/api/vagas');
+                const vagas = await response.json();
+                console.log(vagas);
+                const lista = document.getElementById('listaVagas');
+                lista.innerHTML = '';
+
+                vagas.forEach(vaga => {
+                    const vagaElement = document.createElement('div');
+                    vagaElement.innerHTML = `
+                        <p><strong>Vaga:</strong> ${vaga.nomeDaVaga}</p>
+                        <p><strong>Modalidade:</strong> ${vaga.modalidadeDeTrabalho}</p>
+                        <p><strong>Empresa:</strong> ${vaga.empresa ? vaga.empresa.nomeDaempresa : 'Empresa não encontrada'}</p>
+                        <p><strong>CNPJ:</strong> ${vaga.empresa ? vaga.empresa.cnpj : 'CNPJ não disponível'}</p>
+                        <p><strong>CEP:</strong> ${vaga.empresa ? vaga.empresa.cep : 'CEP não disponível'}</p>
+                        <hr>
+                    `;
+                    lista.appendChild(vagaElement);
+                });
+            } catch (error) {
+                console.error('Erro ao listar vagas:', error);
+            }
+        }        
+        listarVagas();
+    </script>
+</body>
+</html>

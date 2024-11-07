@@ -1,48 +1,10 @@
-import { empresaModel } from "./empresaModel.js"
-
-export class cadastroDeVagas {
-    #nomeDavaga    
-    #modalidadeDeTrabalho
-    #empresa
-
-    constructor(nomeDaVaga, modalidadeDeTrabalho, empresa) {
-        this.#nomeDavaga = nomeDaVaga;
-        this.#modalidadeDeTrabalho = modalidadeDeTrabalho;
-
-        if (empresa instanceof empresaModel) {
-            this.#empresa = empresa;
-        } else {
-            throw new Error("A empresa precisa ser uma instância de empresaModel");
-        }
-
-        this.id = null;
-    }
+import mongoose from "mongoose";
 
 
+const vagaSchema = new mongoose.Schema({
+    nomeDaVaga: { type: String, required: true },
+    modalidadeDeTrabalho: { type: String, required: true },
+    empresa: { type: mongoose.Schema.Types.ObjectId, ref: 'Empresa', required: true }  // Referência para o modelo Empresa
+});
 
-    getNomeVagas() {
-        return this.#nomeDavaga
-    }
-
-    getModalidadeDeTrabalho() {
-        return this.#modalidadeDeTrabalho
-    }
-
-    getEmpresa() {
-        return {
-            nome: this.#empresa.getNomeDaEmpresa(),
-            cnpj: this.#empresa.getCnpj(),
-            cep: this.#empresa.getCep()
-        };
-    }
-
-    setNomeVagas(nome) {
-        this.#nomeDavaga = nome;
-    }
-
-    setModalidadeDeTrabalho(modalidade) {
-        this.#modalidadeDeTrabalho = modalidade;
-    }
-
-
-}
+export default mongoose.model('Vaga', vagaSchema);

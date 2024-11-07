@@ -1,73 +1,100 @@
 import express from 'express';
-import { cadastroDeVagas } from '../Model/cadastroDeVagasModel.js';
-import { empresaModel } from '../Model/empresaModel.js';
-
-let lastId = 0;
-function generateId() {
-    return lastId++;
-}
-
+import Vaga from '../Model/cadastroDeVagasModel.js'; 
+import Empresa from '../Model/empresaModel.js'; 
 
 const router = express.Router();
 
-let empresas = [];
-let vagas = [];
+router.get('/vagas', async (req, res) => {
+    try {
+        const vagas = await Vaga.find().populate('empresa');
 
-router.get('/vagas', (req, res) => {
-    const vagaData = vagas.map((vaga, index) => ({
-        id: index,
-        nomeDaVaga: vaga.getNomeVagas(),
-        modalidadeDeTrabalho: vaga.getModalidadeDeTrabalho(),
-        empresa: vaga.getEmpresa()
-    }));
+        const vagaData = vagas.map((vaga) => ({
+            id: vaga._id,
+            nomeDaVaga: vaga.nomeDaVaga,
+            modalidadeDeTrabalho: vaga.modalidadeDeTrabalho,
+            empresa: {
+                nomeDaempresa: vaga.empresa.nomeDaempresa || 'Nome não disponível',
+                cnpj: vaga.empresa.cnpj,
+                cep: vaga.empresa.cep
+            }
+        }));
 
-    res.json(vagaData);
+        res.json(vagaData);
+    } catch (error) {
+        res.status(500).json({ mensagem: 'Erro ao recuperar vagas', error });
+    }
+});
 
-})
 
-router.post('/vagas', (req, res) => {
+router.post('/vagas', async (req, res) => {
     const { nomeVaga, modalidade, nomeEmpresa, cnpj, cep } = req.body;
 
-    const empresa = new empresaModel(nomeEmpresa, cnpj, cep);
-    empresas.push(empresa)
-    const vaga = new cadastroDeVagas(nomeVaga, modalidade, empresa);
-    vagas.id = generateId();
-    vagas.push(vaga);
+    try {
+        
+        const empresa = new Empresa({ nomeDaempresa: nomeEmpresa, cnpj, cep });
+        await empresa.save();  
 
-    res.status(201).json({ mensagem: 'Vaga criada com sucesso', vaga: {
-        nomeDaVaga: vaga.getNomeVagas(),
-        modalidadeDeTrabalho: vaga.getModalidadeDeTrabalho(),
-        empresa: vaga.getEmpresa()
-    } });
+        
+        const vaga = new Vaga({
+            nomeDaVaga: nomeVaga,
+            modalidadeDeTrabalho: modalidade,
+            empresa: empresa._id  
+        });
+        await vaga.save();  
+        res.status(201).json({
+            mensagem: 'Vaga criada com sucesso',
+            vaga: {
+                nomeDaVaga: vaga.nomeDaVaga,
+                modalidadeDeTrabalho: vaga.modalidadeDeTrabalho,
+                empresa: vaga.empresa  
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ mensagem: 'Erro ao criar vaga', error });
+    }
 });
 
-router.put('/vagas/:id', (req, res) => {
-   const { id } = req.params;
-   const{ nomeVaga, modalidade } = req.body;
 
-   const vaga = vagas[id];
-
-   if (vaga) {
-    vaga.setNomeVagas(nomeVaga || vaga.getNomeVagas());
-    vaga.setModalidadeDeTrabalho(modalidade || vaga.getModalidadeDeTrabalho());
-
-    res.json({ mensagem: 'Vaga atualizada com sucesso', vaga: {
-        nomeDaVaga: vaga.getNomeVagas(),
-        modalidadeDeTrabalho: vaga.getModalidadeDeTrabalho(),
-        empresa: vaga.getEmpresa()
-    } });
-} else {
-    res.status(404).json({ mensagem: 'Vaga não encontrada' });
-}
-});
-
-router.delete('/vagas/:id', (req, res) => {
+router.put('/vagas/:id', async (req, res) => {
     const { id } = req.params;
-    if (vagas[id]) {
-        vagas.splice(id, 1);
-        res.json({ mensagem: 'Vaga removida com sucesso' });
-    } else {
-        res.status(404).json({ mensagem: 'Vaga não encontrada' });
+    const { nomeVaga, modalidade } = req.body;
+
+    try {
+        
+        const vaga = await Vaga.findById(id);
+
+        if (vaga) {
+            
+            vaga.nomeDaVaga = nomeVaga || vaga.nomeDaVaga;
+            vaga.modalidadeDeTrabalho = modalidade || vaga.modalidadeDeTrabalho;
+
+            await vaga.save();  
+            res.json({ mensagem: 'Vaga atualizada com sucesso', vaga });
+        } else {
+            res.status(404).json({ mensagem: 'Vaga não encontrada' });
+        }
+    } catch (error) {
+        res.status(500).json({ mensagem: 'Erro ao atualizar vaga', error });
+    }
+});
+
+
+router.delete('/vagas/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        
+        const vaga = await Vaga.findById(id);
+
+        if (vaga) {
+            await vaga.remove();  
+
+            res.json({ mensagem: 'Vaga removida com sucesso' });
+        } else {
+            res.status(404).json({ mensagem: 'Vaga não encontrada' });
+        }
+    } catch (error) {
+        res.status(500).json({ mensagem: 'Erro ao remover vaga', error });
     }
 });
 

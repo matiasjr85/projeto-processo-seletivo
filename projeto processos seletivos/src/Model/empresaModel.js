@@ -1,46 +1,11 @@
-export class empresaModel {
-    #nomeDaempresa;
-    #cnpj;    
-    #cep
+import mongoose from "mongoose";
 
-    constructor(nomeDaEmpresa, cnpj,cep) {
-        this.#nomeDaempresa = nomeDaEmpresa;
-        this.#cnpj = cnpj;        
-        this.#cep = cep;
-    }
 
-    getNomeDaEmpresa() {
-        return this.#nomeDaempresa;
-    }
+const empresaSchema = new mongoose.Schema({
+    nomeDaempresa: { type: String, required: true },
+    cnpj: { type: String, required: true },
+    cep: { type: String, required: true }
+});
 
-    getCnpj() {
-        return this.#cnpj;
-    }    
 
-    getCep() {
-        return this.#cep;
-    }
-    
-
-    async buscarEndereco() {
-        try {
-            const response = await fetch(`https://viacep.com.br/ws/${this.#cep}/json/`);
-            
-            if (!response.ok) {
-                throw new Error('Erro ao buscar o endereço');
-            }
-
-            const dados = await response.json();
-
-            if (dados.erro) {
-                console.log('CEP não encontrado');
-                return null;
-            }
-
-            return dados; 
-        } catch (error) {
-            console.error(error);
-            return null;
-        }
-    }
-}
+export default mongoose.model('Empresa', empresaSchema);
